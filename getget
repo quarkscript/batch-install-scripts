@@ -1,0 +1,86 @@
+#!/bin/bash
+## conf and install packs over base-system
+## https://youtu.be/RuLSZkWwlC4
+## https://github.com/quarkscript/batch-install-scripts.git
+
+# write your own user name and host name if you want
+user_name=linuser
+host_name=ArchComp
+
+# set localtime
+rm -r /etc/localtime
+ln -s /usr/share/zoneinfo/Europe/Kiev /etc/localtime
+
+# set hostname
+echo $host_name > /etc/hostname
+
+# set locale
+echo '# '>> /etc/locale.gen
+echo '# Automatically added by installation script'>> /etc/locale.gen
+echo 'en_US.UTF-8 UTF-8 '>> /etc/locale.gen
+echo 'uk_UA.UTF-8 UTF-8 '>> /etc/locale.gen
+echo 'ru_RU.UTF-8 UTF-8 '>> /etc/locale.gen
+locale-gen
+
+# set lang
+echo '#LANG="en_US.UTF-8" ' > /etc/locale.conf
+echo 'LANG="uk_UA.UTF-8" ' >> /etc/locale.conf
+echo '#LANG="ru_RU.UTF-8" ' >> /etc/locale.conf
+echo 'KEYMAP=us' > /etc/vconsole.conf
+echo '#KEYMAP_TOGGLE=ua' >> /etc/vconsole.conf
+echo 'FONT=UniCyr_8x16' >> /etc/vconsole.conf
+
+# update packages
+pacman -Syu --noconfirm --needed 
+
+# drop already installed packages
+earlybatchlist=$(cat packages.txt | grep -vx "$(pacman -Qqe)")
+
+# drop unavailable packages
+rm -f ignored.txt
+echo search bad package from batch list
+batchlist=""
+for i in $earlybatchlist
+    do
+        if $(pacman -Ss $i | grep $i -q)
+            then
+            batchlist+="$i "
+        else
+            echo $i >>ignored.txt
+        fi
+        printf "."
+done
+echo done
+if [ ! -e ignored.txt ]
+    then
+    echo it seems all packages available
+else
+    echo not all packages from batch list can be installed
+    echo check ignored.txt
+fi
+
+# batch installation
+pacman -S $batchlist --noconfirm --needed  |& tee -a /install.log
+#cat packages.txt | grep -vx "$(pacman -Qqe)"  > /tmp/newinstall
+#xargs -a /tmp/newinstall pacman -S --noconfirm --needed |& tee -a /install.log
+#rm /tmp/newinstall
+
+systemctl enable sddm
+useradd -m -g users -s /bin/bash $user_name 
+systemctl enable org.cups.cupsd.service 
+gpasswd -a $user_name sys 
+gpasswd -a $user_name wheel 
+echo $user_name' ALL=(ALL) ALL'>> /etc/sudoers
+systemctl disable dhcpcd 
+systemctl enable NetworkManager.service 
+
+echo
+echo  if you want to setup a hwclock 
+echo  to localtime, run as root after reboot
+echo  timedatectl set-local-rtc 1
+echo 
+echo 'and now enter a new password for user:' $user_name
+passwd $user_name
+
+# disable root
+passwd -l root

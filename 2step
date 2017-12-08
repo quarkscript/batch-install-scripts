@@ -1,0 +1,27 @@
+#!/bin/bash
+# https://youtu.be/RuLSZkWwlC4
+# https://github.com/quarkscript/batch-install-scripts.git
+./getget 
+mkinitcpio -p linux >> /install.log
+grub-mkconfig -o /boot/grub/grub.cfg >> /install.log 
+echo
+
+echo Fast reinstall instruction: (if needed)
+echo - exit from arch-chroot
+echo - execute mc and remove all folders from /mnt except /var/cache/pacman/pkg
+echo - remove wrong/unneeded packages from /mnt/pacmanlist.txt
+echo - exit from mc and repeat /mnt/1step
+
+if [ -e ignored.txt ]
+    then
+    echo
+    echo packages unavailable from repositiry:
+    echo $(cat ignored.txt)
+    echo You can install alternatives manually or try without them
+fi
+
+echo
+echo  before reboot do not forget
+echo  to install bootloader like
+echo  grub-install /dev/sdX
+echo 

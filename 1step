@@ -1,0 +1,15 @@
+#!/bin/bash
+# it is a small scripts for simply batch installation of Arch Linux
+# https://youtu.be/RuLSZkWwlC4
+# https://github.com/quarkscript/batch-install-scripts.git
+# how to use:
+# boot from arch linux install-cd and mount future root partition to /mnt
+# copy 1step 2step getget pacmanlist.txt to /mnt
+# check internet connection like ping google.com if internet is ok 
+# execute /mnt/1step and follow instructions
+pacstrap /mnt base grub mc
+genfstab -U /mnt >> /mnt/etc/fstab 
+echo 
+echo if installation complete without errors
+echo - execute arch-chroot /mnt
+echo - execute ./2step
