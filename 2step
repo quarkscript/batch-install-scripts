@@ -6,11 +6,11 @@ mkinitcpio -p linux >> /install.log
 grub-mkconfig -o /boot/grub/grub.cfg >> /install.log 
 echo
 
-echo Fast reinstall instruction: (if needed)
-echo - exit from arch-chroot
-echo - execute mc and remove all folders from /mnt except /var/cache/pacman/pkg
-echo - remove wrong/unneeded packages from /mnt/pacmanlist.txt
-echo - exit from mc and repeat /mnt/1step
+echo "Fast reinstall instruction: (if needed)"
+echo "- exit from arch-chroot"
+echo "- execute mc and remove all folders from /mnt except /var/cache/pacman/pkg"
+echo "- remove wrong/unneeded packages from /mnt/pacmanlist.txt"
+echo "- exit from mc and repeat /mnt/1step"
 
 if [ -e ignored.txt ]
     then
@@ -21,7 +21,7 @@ if [ -e ignored.txt ]
 fi
 
 echo
-echo  before reboot do not forget
-echo  to install bootloader like
-echo  grub-install /dev/sdX
+echo  "before reboot do not forget"
+echo  "to install bootloader like"
+echo  "grub-install /dev/sdX"
 echo 
