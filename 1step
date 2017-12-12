@@ -10,6 +10,6 @@
 pacstrap /mnt base grub mc
 genfstab -U /mnt >> /mnt/etc/fstab 
 echo 
-echo if installation complete without errors
-echo - execute arch-chroot /mnt
-echo - execute ./2step
+echo "if installation complete without errors"
+echo "- execute arch-chroot /mnt"
+echo "- execute ./2step"
