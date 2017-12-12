@@ -15,7 +15,7 @@ echo "- exit from mc and repeat /mnt/1step"
 if [ -e ignored.txt ]
     then
     echo
-    echo packages unavailable from repositiry:
+    echo packages unavailable from repository:
     echo $(cat ignored.txt)
     echo You can install alternatives manually or try without them
 fi
