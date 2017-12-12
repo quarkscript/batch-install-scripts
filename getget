@@ -42,7 +42,7 @@ echo search bad package from batch list
 batchlist=""
 for i in $earlybatchlist
     do
-        if $(pacman -Ss $i | grep $i -q)
+        if $(pacman -Ss $i | grep $i -w -q)
             then
             batchlist+="$i "
         else
