@@ -1,6 +1,6 @@
 #!/bin/bash
 # https://youtu.be/RuLSZkWwlC4
-# https://github.com/quarkscript/batch-install-scripts.git
+# https://github.com/quarkscript/batch-install-scripts
 ./getget 
 mkinitcpio -p linux >> /install.log
 grub-mkconfig -o /boot/grub/grub.cfg >> /install.log 
