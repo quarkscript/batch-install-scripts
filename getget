@@ -1,7 +1,7 @@
 #!/bin/bash
 ## conf and install packs over base-system
 ## https://youtu.be/RuLSZkWwlC4
-## https://github.com/quarkscript/batch-install-scripts.git
+## https://github.com/quarkscript/batch-install-scripts
 
 # write your own user name and host name if you want
 user_name=linuser
