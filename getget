@@ -1,0 +1,146 @@
+#!/bin/bash
+## conf and install packs over base-system
+## https://youtu.be/RuLSZkWwlC4
+## https://github.com/quarkscript/batch-install-scripts
+
+# write your own user name and host name if you want
+user_name=linuser
+host_name=ArchComp
+
+echo 'Set localtime' 
+rm -r /etc/localtime
+ln -s /usr/share/zoneinfo/Europe/Kiev /etc/localtime
+
+echo 'Set hostname' 
+echo $host_name > /etc/hostname
+
+## function - edit config file
+f-ecf(){
+cp $1 $1.tmp
+echo "cat $1.tmp | sed -e 's@"$2"@"$3"@g' >$1" >rsct.tmp
+chmod +x rsct.tmp
+./rsct.tmp
+rm -f $1.tmp rsct.tmp
+}
+
+echo 'Set locale'  
+for i in en_US uk_UA ru_RU; do
+    f-ecf "/etc/locale.gen" "#$i.UTF-8 UTF-8" "$i.UTF-8 UTF-8"
+done
+locale-gen
+
+echo 'Set lang'  
+echo '#LANG="en_US.UTF-8" 
+LANG="uk_UA.UTF-8" 
+#LANG="ru_RU.UTF-8" ' > /etc/locale.conf
+echo 'KEYMAP=us
+#KEYMAP_TOGGLE=ua
+FONT=UniCyr_8x16' > /etc/vconsole.conf
+
+echo 'Update packages'  
+pacman -Syu --noconfirm --needed  
+
+echo 'Drop already installed packages'  
+earlybatchlist=$(cat packages.txt | grep -vx "$(pacman -Qqe)")
+
+# drop unavailable packages
+rm -f ignored.txt
+echo 'Search bad package from batch list'  
+batchlist=""
+for i in $earlybatchlist
+    do
+        if $(pacman -Ss $i | grep $i -w -q)
+            then
+            batchlist+="$i "
+        else
+            echo $i >>ignored.txt
+        fi
+        printf "."
+done
+echo 'done' 
+if [ ! -e ignored.txt ]
+    then
+    echo 'it seems all packages available' 
+else
+    echo "not all packages from batch list can be installed" 
+    echo "check ignored.txt" 
+fi
+
+# batch installation
+pacman -S $batchlist --noconfirm --needed  
+
+systemctl enable sddm
+useradd -m -g users -s /bin/bash $user_name 
+systemctl enable org.cups.cupsd.service 
+gpasswd -a $user_name sys 
+gpasswd -a $user_name wheel 
+echo $user_name' ALL=(ALL) ALL'>> /etc/sudoers
+systemctl disable dhcpcd 
+systemctl enable NetworkManager.service 
+
+echo '## Some customizations ##' 
+echo 'Tune pkgbuild system' 
+cp /etc/makepkg.conf /etc/makepkg.conf.orig 
+echo 'enable smp makepkg' 
+f-ecf '/etc/makepkg.conf' '#MAKEFLAGS=' 'MAKEFLAGS='
+f-ecf '/etc/makepkg.conf' '-j2' '-j$(($(grep "model name" /proc/cpuinfo --count)+1))'
+#echo "DANGER! Compiled pkg's may fail and won't work with the other hw. BE AWARE!" 
+#f-ecf '/etc/makepkg.conf' '-mtune=generic' '-mtune=native' 
+echo 'set pkg-compression threads' 
+f-ecf '/etc/makepkg.conf' 'xz -c -z' 'xz -c -z -T $(($(grep "model name" /proc/cpuinfo --count)+1))' 
+#
+echo 'Tune grub settings' 
+cp /etc/default/grub /etc/default/grub.orig  
+echo 'set kernel boot params' 
+f-ecf '/etc/default/grub' 'GRUB_CMDLINE_LINUX_DEFAULT="quiet"' 'GRUB_CMDLINE_LINUX_DEFAULT="quiet zswap.compressor=lzo zswap.max_pool_percent=20 elevator=cfq"'
+echo 'tune grub-menu colors' 
+f-ecf '/etc/default/grub' '#GRUB_COLOR_NORMAL="light-blue/black"' 'GRUB_COLOR_NORMAL="light-cyan/black"'
+f-ecf '/etc/default/grub' '#GRUB_COLOR_HIGHLIGHT="light-cyan/blue"' 'GRUB_COLOR_HIGHLIGHT="black/light-cyan"'
+echo 'enable grub wallpaper, you need to copy png image to /boot/grub/walp.png and update grub' 
+f-ecf '/etc/default/grub' '#GRUB_BACKGROUND="/path/to/wallpaper"' 'GRUB_BACKGROUND="/boot/grub/wallp.png"'
+#
+echo 'Tune mkinitcpio' 
+cp /etc/mkinitcpio.conf /etc/mkinitcpio.conf.orig 
+echo 'add drivers to initrd' 
+f-ecf '/etc/mkinitcpio.conf' 'MODULES=()' 'MODULES=(btrfs lz4)'
+echo 'edit kernel hooks ' 
+f-ecf '/etc/mkinitcpio.conf' 'HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)' 'HOOKS=(base udev autodetect modconf block filesystems keyboard usr fsck shutdown)'
+echo 'set xz-compression to initrd' 
+f-ecf '/etc/mkinitcpio.conf' '#COMPRESSION="xz"' 'COMPRESSION="xz"'
+#
+echo 'Enable colors for pacman' 
+cp /etc/pacman.conf /etc/pacman.conf.orig
+cat /etc/pacman.conf.orig | sed -e 's/#Color/Color/g' >/etc/pacman.conf
+#
+echo 'Set layouts and key switches' 
+mkdir /home/$user_name/.config
+cat<<EOF>/home/$user_name/.config/kxkbrc
+[Layout]
+DisplayNames=,,
+LayoutList=us,ua,ru
+LayoutLoopCount=-1
+Model=pc101
+Options=grp:ctrl_shift_toggle
+ResetOldOptions=true
+ShowFlag=true
+ShowLabel=true
+ShowLayoutIndicator=true
+ShowSingle=false
+SwitchMode=Global
+Use=true
+EOF
+chown -R $user_name /home/$user_name
+echo '##...##' 
+echo '
+  if you want to setup a hwclock 
+  to localtime, run as root after reboot
+  timedatectl set-local-rtc 1
+' 
+echo 'and now enter a new password for user:' $user_name
+passwd $user_name
+
+echo 'Disable root' 
+passwd -l root
+
+# copy wallpaper to grub
+cp /usr/share/wallpapers/Next/contents/images/1024x768.png /boot/grub/wallp.png
