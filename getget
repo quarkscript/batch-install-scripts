@@ -5,7 +5,7 @@
 
 # write your own user name and host name if you want
 user_name=linuser
-host_name=ArchComp
+host_name=pc
 
 echo 'Set localtime' 
 rm -r /etc/localtime
@@ -74,6 +74,8 @@ useradd -m -g users -s /bin/bash $user_name
 systemctl enable org.cups.cupsd.service 
 gpasswd -a $user_name sys 
 gpasswd -a $user_name wheel 
+gpasswd -a $user_name optical
+gpasswd -a $user_name lp
 echo $user_name' ALL=(ALL) ALL'>> /etc/sudoers
 systemctl disable dhcpcd 
 systemctl enable NetworkManager.service 
